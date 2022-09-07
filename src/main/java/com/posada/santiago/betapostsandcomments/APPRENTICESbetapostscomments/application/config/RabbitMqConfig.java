@@ -56,6 +56,4 @@ public class RabbitMqConfig {
         /**Starting point*/
         handler.accept(received);
     }
-
-
 }

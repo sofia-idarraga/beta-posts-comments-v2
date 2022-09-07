@@ -2,6 +2,7 @@ package com.posada.santiago.betapostsandcomments.APPRENTICESbetapostscomments.bu
 
 
 import com.posada.santiago.betapostsandcomments.APPRENTICESbetapostscomments.business.gateways.DomainViewRepository;
+import com.posada.santiago.betapostsandcomments.APPRENTICESbetapostscomments.business.gateways.EventBus;
 import com.posada.santiago.betapostsandcomments.APPRENTICESbetapostscomments.business.gateways.model.CommentViewModel;
 import com.posada.santiago.betapostsandcomments.APPRENTICESbetapostscomments.business.gateways.model.PostViewModel;
 import com.posada.santiago.betapostsandcomments.APPRENTICESbetapostscomments.business.generic.DomainUpdater;
@@ -16,13 +17,17 @@ public class ViewUpdater extends DomainUpdater {
 
     //Complete the implementation of the view updater
     private final DomainViewRepository repository;
+    private final EventBus bus;
 
-    public ViewUpdater(DomainViewRepository repository) {
+    public ViewUpdater(DomainViewRepository repository, EventBus bus) {
+        this.bus = bus;
         this.repository = repository;
 
         listen((PostCreated event) -> {
             PostViewModel post = new PostViewModel(event.aggregateRootId(), event.getAuthor(), event.getTitle(), new ArrayList<>());
             repository.saveNewPost(post).subscribe();
+            bus.publishPostCreated(post);
+
         });
 
         listen((CommentAdded event) -> {
@@ -31,6 +36,8 @@ public class ViewUpdater extends DomainUpdater {
                     event.getAuthor(),
                     event.getContent());
             repository.addCommentToPost(comment).subscribe();
+            bus.publishCommentAdded(comment);
+
         });
     }
 }
