@@ -35,7 +35,7 @@ public class MongoViewRepository implements DomainViewRepository {
     @Override
     public Flux<PostViewModel> findAllPosts() {
         /**make the implementation, using the template, of the method find all posts that are stored in the db*/
-        return null;
+        return template.findAll(PostViewModel.class);
     }
 
     @Override
