@@ -19,6 +19,8 @@ public class BringAllPostsUseCase {
     }
 
     public Flux<PostViewModel> apply(){
-        return repository.findAllPosts();
+
+        return repository.findAllPosts()
+                .switchIfEmpty(Flux.error(new Throwable("Anything found")));
     }
 }

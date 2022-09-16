@@ -4,6 +4,7 @@ package com.posada.santiago.betapostsandcomments.APPRENTICESbetapostscomments.ap
 import com.posada.santiago.betapostsandcomments.APPRENTICESbetapostscomments.business.gateways.model.PostViewModel;
 import com.posada.santiago.betapostsandcomments.APPRENTICESbetapostscomments.business.usecases.BringAllPostsUseCase;
 import com.posada.santiago.betapostsandcomments.APPRENTICESbetapostscomments.business.usecases.BringPostByIdUseCase;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.MediaType;
@@ -16,6 +17,7 @@ import static org.springframework.web.reactive.function.server.RequestPredicates
 import static org.springframework.web.reactive.function.server.RequestPredicates.accept;
 import static org.springframework.web.reactive.function.server.RouterFunctions.route;
 
+@Slf4j
 @Configuration
 public class QueryHandler {
 
@@ -25,17 +27,41 @@ public class QueryHandler {
     public RouterFunction<ServerResponse> getPostById(BringPostByIdUseCase useCase) {
         return route(
                 GET("/post/{id}").and(accept(MediaType.APPLICATION_JSON)),
-                request -> ServerResponse.ok().contentType(MediaType.APPLICATION_JSON)
-                        .body(BodyInserters.fromPublisher(useCase.apply(Mono.just(request.pathVariable("id"))), PostViewModel.class))
-                        .onErrorResume(throwable -> ServerResponse.notFound().build()));
+                request -> useCase.apply(Mono.just(request.pathVariable("id")))
+                        .flatMap(postViewModel -> {
+                            log.info("Post found with id " + postViewModel.getAggregateId());
+                            return ServerResponse.ok().contentType(MediaType.APPLICATION_JSON)
+                                    .bodyValue(postViewModel);
+                        })
+                        .onErrorResume(error -> {
+                            log.error(error.getLocalizedMessage());
+                            return ServerResponse.badRequest().build();
+                        })
+        );
+
+        // ServerResponse.ok().contentType(MediaType.APPLICATION_JSON)
+        // .body(BodyInserters.fromPublisher(useCase.apply(Mono.just(request.pathVariable("id"))), PostViewModel.class))
+        // .onErrorResume(throwable -> ServerResponse.notFound().build()));
     }
 
     @Bean
-    public RouterFunction<ServerResponse> getAllPosts(BringAllPostsUseCase useCase){
+    public RouterFunction<ServerResponse> getAllPosts(BringAllPostsUseCase useCase) {
         return route(
                 GET("/posts").and(accept(MediaType.APPLICATION_JSON)),
-                request -> ServerResponse.ok().contentType(MediaType.APPLICATION_JSON)
-                        .body(BodyInserters.fromPublisher(useCase.apply(),PostViewModel.class))
+                request -> useCase.apply()
+                        .collectList()
+                        .flatMap(posts -> {
+                            log.info("Posts found");
+                            return ServerResponse.ok().contentType(MediaType.APPLICATION_JSON)
+                                    .body(BodyInserters.fromPublisher(useCase.apply(), PostViewModel.class));
+                        })
+                        .onErrorResume(error -> {
+                            log.error(error.getLocalizedMessage());
+                            return ServerResponse.badRequest().build();
+                        })
+
+                // ServerResponse.ok().contentType(MediaType.APPLICATION_JSON)
+                // .body(BodyInserters.fromPublisher(useCase.apply(), PostViewModel.class))
         );
     }
 

@@ -1,13 +1,12 @@
 package com.posada.santiago.betapostsandcomments.APPRENTICESbetapostscomments.business.usecases;
-
-
 import com.posada.santiago.betapostsandcomments.APPRENTICESbetapostscomments.business.gateways.DomainViewRepository;
 import com.posada.santiago.betapostsandcomments.APPRENTICESbetapostscomments.business.gateways.model.PostViewModel;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 
+
 @Service
-public class BringPostByIdUseCase  {
+public class BringPostByIdUseCase {
     // finish the implementation of this class using the functional interfaces
     private final DomainViewRepository repository;
 
@@ -15,7 +14,10 @@ public class BringPostByIdUseCase  {
         this.repository = repository;
     }
 
-    public Mono<PostViewModel> apply(Mono<String> id){
-        return id.flatMap(s -> repository.findByAggregateId(s));
+    public Mono<PostViewModel> apply(Mono<String> id) {
+
+        return id.flatMap(s ->
+                        repository.findByAggregateId(s))
+                .switchIfEmpty(Mono.error(new Throwable("Post id doesn't exist")));
     }
 }
